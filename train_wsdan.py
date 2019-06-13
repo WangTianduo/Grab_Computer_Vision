@@ -8,6 +8,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 import time
 import logging
 import warnings
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -55,7 +56,7 @@ def main():
     # Initialize model
     ##################################
     image_size = (224, 224)
-    num_classes = 197
+    num_classes = 196
     num_attentions = 32
     start_epoch = 0
 
@@ -103,8 +104,8 @@ def main():
     ##################################
     # Load dataset
     ##################################
-    train_dataset, validate_dataset = CustomDataset(root='./Dataset', train=True, cropped=False, shape=image_size), \
-                                      CustomDataset(root='./Dataset', train=False, cropped=False, shape=image_size)
+    train_dataset, validate_dataset = CustomDataset(root='./Dataset', train=True, cropped=True, shape=image_size), \
+                                      CustomDataset(root='./Dataset', train=False, cropped=True, shape=image_size)
 
     # train_dataset, validate_dataset, _ = load_datasets(set_name='stanford_dogs', input_size=224)
 
@@ -129,6 +130,8 @@ def main():
     logging.info('Start training: Total epochs: {}, Batch size: {}, Training size: {}, Validation size: {}'.
                  format(options.epochs, options.batch_size, len(train_dataset), len(validate_dataset)))
 
+    best_accuracy = 0.0
+    best_model_wts = copy.deepcopy(net.state_dict)
     for epoch in range(start_epoch, options.epochs):
         train(epoch=epoch,
               data_loader=train_loader,
@@ -139,11 +142,25 @@ def main():
               save_freq=options.save_freq,
               save_dir=options.save_dir,
               verbose=options.verbose)
-        val_loss = validate(data_loader=validate_loader,
+        val_loss, top1_acc = validate(data_loader=validate_loader,
                             net=net,
                             loss=loss,
                             verbose=options.verbose)
+
+        if top1_acc > best_accuracy:
+            best_accuracy = top1_acc
+            best_model_wts = copy.deepcopy(net.state_dict)
+
         scheduler.step()
+
+    logging.info('training finish, start saving the model')
+
+    net.load_state_dict(best_model_wts)
+
+    if not os.path.exists('trained_models'):
+        os.makedirs('trained_models')
+    name = 'acc_' + str(best_accuracy)
+    torch.save(net, 'trained_models/' + name + '.pkl')
 
 
 def train(**kwargs):
@@ -377,7 +394,7 @@ def validate(**kwargs):
                  (epoch_loss, epoch_acc[0], epoch_acc[1], epoch_acc[2], end_time - start_time))
     logging.info('')
 
-    return epoch_loss
+    return epoch_loss, epoch_acc[0]
 
 
 if __name__ == '__main__':

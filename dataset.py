@@ -58,8 +58,6 @@ class CustomDataset(Dataset):
 
         split = self.load_split()
 
-        print('after box')
-
         if self.cropped:
             self._breed_annos = [[(annos, box, idx)] for annos, box, idx in split]
             self._flat_breed_annos = sum(self._breed_annos, [])
@@ -95,7 +93,7 @@ class CustomDataset(Dataset):
     def load_split(self):
 
         if self.train:
-            labels = [item[5][0][0] for item in self._annotations if item[6][0] == 0]
+            labels = [item[5][0][0]-1 for item in self._annotations if item[6][0] == 0]
             boxes = [[item[1][0][0], item[2][0][0], item[3][0][0], item[4][0][0]] for item in self._annotations
                      if item[6][0] == 0]
             filenames = [item[0][0] for item in self._annotations if item[6][0] == 0]
