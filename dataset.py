@@ -1,22 +1,12 @@
-""" NOTICE: A Custom Dataset SHOULD BE PROVIDED
-Created: May 02,2019 - Yuchong Gu
-Revised: May 07,2019 - Yuchong Gu
-"""
-import os
 from PIL import Image
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
-
-import numpy as np
+from torchvision.datasets.utils import download_url, list_dir, list_files
 
 from scipy.io import loadmat
 from os.path import join
 
-__all__ = ['CustomDataset']
-config = {
-    # e.g. train/val/test set should be located in os.path.join(config['datapath'], 'train/val/test')
-    'datapath': 'DATA_PATH',
-}
+import os
 
 
 class CustomDataset(Dataset):
@@ -41,6 +31,7 @@ class CustomDataset(Dataset):
                  train=True,
                  cropped=False,
                  transform=None,
+                 download=True,
                  shape=(224, 224)):
 
         self.root = root
@@ -49,8 +40,10 @@ class CustomDataset(Dataset):
         self.transform = transform
         self.shape = shape
 
-        self.annotation_file = loadmat(join(root, 'cars_annos'))
+        if download:
+            self.download()
 
+        self.annotation_file = loadmat(join(root, 'cars_annos'))
         self._annotations = self.annotation_file['annotations'][0]
         self._class_names = self.annotation_file['class_names'][0]
 
@@ -118,3 +111,27 @@ class CustomDataset(Dataset):
             print('Fk, failed')
         return boxes
 
+    def download(self):
+        import tarfile
+
+        if os.path.exists(join(self.root, 'car_ims')) and os.path.exists(join(self.root, 'cars_annos.mat')):
+            if len(os.listdir(join(self.root, 'car_ims'))) == len(loadmat(join(self.root, 'cars_annos.mat'))['annotations'][0]):
+                print('Files already downloaded and verified')
+                return
+
+        if os.path.exists(self.root):
+            os.makedirs(self.root)
+
+        car_url = 'http://imagenet.stanford.edu/internal/car196/'
+        imgs = 'car_ims.tgz'
+        annos = 'cars_annos.mat'
+        test = 'cars_test_annos_withlabels.mat'
+
+        for filename in [imgs, annos, test]:
+            url = car_url + filename
+            download_url(url, self.root, filename, None)
+            print('download file {} already'.format(filename))
+
+        with tarfile.open(join(self.root, imgs), 'r') as tar_file:
+            tar_file.extractall(self.root)
+        os.remove(join(self.root, imgs))

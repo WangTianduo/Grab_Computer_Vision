@@ -1,7 +1,3 @@
-"""TRAINING
-Created: May 04,2019 - Yuchong Gu
-Revised: May 07,2019 - Yuchong Gu
-"""
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
@@ -29,7 +25,7 @@ def main():
     parser = OptionParser()
     parser.add_option('-j', '--workers', dest='workers', default=4, type='int',
                       help='number of data loading workers (default: 4)')
-    parser.add_option('-e', '--epochs', dest='epochs', default=40, type='int',
+    parser.add_option('-e', '--epochs', dest='epochs', default=1, type='int',
                       help='number of epochs (default: 80)')
     parser.add_option('-b', '--batch-size', dest='batch_size', default=16, type='int',
                       help='batch size (default: 16)')
@@ -131,7 +127,7 @@ def main():
                  format(options.epochs, options.batch_size, len(train_dataset), len(validate_dataset)))
 
     best_accuracy = 0.0
-    best_model_wts = copy.deepcopy(net.state_dict)
+    best_model_wts = copy.deepcopy(net.state_dict())
     for epoch in range(start_epoch, options.epochs):
         train(epoch=epoch,
               data_loader=train_loader,
@@ -143,13 +139,13 @@ def main():
               save_dir=options.save_dir,
               verbose=options.verbose)
         val_loss, top1_acc = validate(data_loader=validate_loader,
-                            net=net,
-                            loss=loss,
-                            verbose=options.verbose)
+                                      net=net,
+                                      loss=loss,
+                                      verbose=options.verbose)
 
         if top1_acc > best_accuracy:
             best_accuracy = top1_acc
-            best_model_wts = copy.deepcopy(net.state_dict)
+            best_model_wts = copy.deepcopy(net.state_dict())
 
         scheduler.step()
 
