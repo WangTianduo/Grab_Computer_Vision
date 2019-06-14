@@ -42,6 +42,8 @@ def main():
                       help='saving directory of .ckpt models (default: ./models)')
     parser.add_option('--init', '--initial-training', dest='initial_training', default=1, type='int',
                       help='train from 1-beginning or 0-resume training (default: 1)')
+    parser.add_option('--feature_map', '--feature_map', dest='feature_map', default='Inception', type='string',
+                      help='use which model as feature map')
 
     (options, args) = parser.parse_args()
 
@@ -56,7 +58,16 @@ def main():
     num_attentions = 32
     start_epoch = 0
 
-    feature_net = inception_v3(pretrained=True)
+    if options.feature_map == 'Inception_v3':
+        feature_net = inception_v3(pretrained=True)
+    elif options.feature_map == 'resnet152_cbm':
+        feature_net = resnet152_cbam(pretrained=True)
+    elif option.feature_map == 'resnet152':
+        feature_net = resnet152(pretrained=True)
+    else:
+        print('wrong model name')
+        return
+
     net = WSDAN(num_classes=num_classes, M=num_attentions, net=feature_net)
 
     # feature_center: size of (#classes, #attention_maps, #channel_features)
@@ -102,8 +113,6 @@ def main():
     ##################################
     train_dataset, validate_dataset = CustomDataset(root='./Dataset', train=True, cropped=True, shape=image_size), \
                                       CustomDataset(root='./Dataset', train=False, cropped=True, shape=image_size)
-
-    # train_dataset, validate_dataset, _ = load_datasets(set_name='stanford_dogs', input_size=224)
 
     train_loader, validate_loader = DataLoader(train_dataset, batch_size=options.batch_size, shuffle=True,
                                                num_workers=options.workers, pin_memory=True), \
@@ -154,7 +163,7 @@ def main():
 
     if not os.path.exists('trained_models'):
         os.makedirs('trained_models')
-    name = 'acc_' + str(best_accuracy.item())
+    name = options.feature_map + '_' + str(best_accuracy.item())
     torch.save(net, '/' + name + '.pkl')
 
 
