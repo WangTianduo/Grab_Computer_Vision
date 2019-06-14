@@ -25,7 +25,7 @@ def main():
     parser = OptionParser()
     parser.add_option('-j', '--workers', dest='workers', default=4, type='int',
                       help='number of data loading workers (default: 4)')
-    parser.add_option('-e', '--epochs', dest='epochs', default=1, type='int',
+    parser.add_option('-e', '--epochs', dest='epochs', default=80, type='int',
                       help='number of epochs (default: 80)')
     parser.add_option('-b', '--batch-size', dest='batch_size', default=16, type='int',
                       help='batch size (default: 16)')
@@ -116,7 +116,6 @@ def main():
     ##################################
     # Learning rate scheduling
     ##################################
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.9)
 
     ##################################
@@ -155,8 +154,8 @@ def main():
 
     if not os.path.exists('trained_models'):
         os.makedirs('trained_models')
-    name = 'acc_' + str(best_accuracy)
-    torch.save(net, 'trained_models/' + name + '.pkl')
+    name = 'acc_' + str(best_accuracy.item())
+    torch.save(net, '/' + name + '.pkl')
 
 
 def train(**kwargs):

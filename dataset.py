@@ -101,16 +101,6 @@ class CustomDataset(Dataset):
         # print(list(zip(filenames, labels)))
         return list(zip(filenames, boxes, labels))
 
-    def get_box(self, annos):
-        boxes = []
-        for item in self._annotations:
-            if item[0][0] == annos:
-                boxes.append([item[1][0][0], item[2][0][0],
-                              item[3][0][0], item[4][0][0]])
-        if len(boxes) == 0:
-            print('Fk, failed')
-        return boxes
-
     def download(self):
         import tarfile
 
@@ -135,3 +125,61 @@ class CustomDataset(Dataset):
         with tarfile.open(join(self.root, imgs), 'r') as tar_file:
             tar_file.extractall(self.root)
         os.remove(join(self.root, imgs))
+
+
+class TestDataSet(Dataset):
+
+    def __init__(self,
+                 root,
+                 cropped=False,
+                 transform=None,
+                 shape=(224, 224)):
+
+        self.root = root
+        self.cropped = cropped
+        self.transform = transform
+        self.shape = shape
+
+        self.annotation_file = loadmat(join(root, 'cars_test_annos_withlabels'))
+        self._annotations = self.annotation_file['annotations'][0]
+
+        split = self.load_split()
+
+        if self.cropped:
+            self._breed_annos = [[(annos, box)] for annos, box in split]
+            self._flat_breed_annos = sum(self._breed_annos, [])
+            self._flat_breed_images = [annotation for annotation, box in self._flat_breed_annos]
+        else:
+            self._breed_images = [annotation for annotation, _, in split]
+
+            self._flat_breed_images = self._breed_images
+
+        # transform
+        if not self.transform:
+            self.transform = transforms.Compose([
+                transforms.Resize(size=(self.shape[0], self.shape[1])),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+
+    def __getitem__(self, item):
+        image_name = 'test/' + self._flat_breed_images[item]
+        image = Image.open(join(self.root, image_name)).convert('RGB')
+
+        if self.cropped:
+            image = image.crop(self._flat_breed_annos[item][1])
+        if self.transform:
+            image = self.transform(image)
+
+        return image
+
+    def __len__(self):
+        return len(self._flat_breed_images)
+
+    def load_split(self):
+
+        boxes = [[item[0][0][0], item[1][0][0], item[2][0][0], item[3][0][0]] for item in self._annotations]
+        filenames = [item[5][0] for item in self._annotations]
+
+        return list(zip(filenames, boxes))
+
