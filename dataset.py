@@ -115,9 +115,8 @@ class CustomDataset(Dataset):
         car_url = 'http://imagenet.stanford.edu/internal/car196/'
         imgs = 'car_ims.tgz'
         annos = 'cars_annos.mat'
-        test = 'cars_test_annos_withlabels.mat'
 
-        for filename in [imgs, annos, test]:
+        for filename in [imgs, annos]:
             url = car_url + filename
             download_url(url, self.root, filename, None)
             print('download file {} already'.format(filename))
@@ -163,7 +162,7 @@ class TestDataSet(Dataset):
             ])
 
     def __getitem__(self, item):
-        image_name = 'test/' + self._flat_breed_images[item]
+        image_name = 'cars_test/' + self._flat_breed_images[item]
         image = Image.open(join(self.root, image_name)).convert('RGB')
 
         if self.cropped:

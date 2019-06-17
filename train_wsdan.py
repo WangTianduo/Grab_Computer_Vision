@@ -62,7 +62,7 @@ def main():
         feature_net = inception_v3(pretrained=True)
     elif options.feature_map == 'resnet152_cbm':
         feature_net = resnet152_cbam(pretrained=True)
-    elif option.feature_map == 'resnet152':
+    elif options.feature_map == 'resnet152':
         feature_net = resnet152(pretrained=True)
     else:
         print('wrong model name')
